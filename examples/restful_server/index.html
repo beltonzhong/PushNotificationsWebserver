@@ -24,13 +24,13 @@
     }
 </style>
 
-<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="http://code.jquery.com/jquery-2.2.1.min.js"></script>
 <script language="javascript" type="text/javascript">
   jQuery(function() {
 
     $(document).on('keyup', '#n1, #n2', function() {
       $.ajax({
-        url: '/api/v1/sum',
+        url: './api/v1/sum',
         method: 'POST',
         dataType: 'json',
         data: { n1: $('#n1').val(), n2: $('#n2').val() },

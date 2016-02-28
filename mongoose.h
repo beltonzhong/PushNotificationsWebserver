@@ -347,7 +347,6 @@ typedef struct stat cs_stat_t;
 #define to64(x) strtoll(x, NULL, 10)
 #define INT64_FMT PRId64
 #define INT64_X_FMT PRIx64
-#define __cdecl
 
 #endif /* CS_PLATFORM == CS_P_ESP_LWIP */
 #endif /* _CS_PLATFORM_ESP_LWIP_H_ */
@@ -510,7 +509,6 @@ typedef struct stat cs_stat_t;
 #define to64(x) strtoll(x, NULL, 10)
 #define INT64_FMT PRId64
 #define INT64_X_FMT PRIx64
-#define __cdecl
 
 #define closesocket(x) close(x)
 
