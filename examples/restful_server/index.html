@@ -30,7 +30,7 @@
 
     $(document).on('keyup', '#n1, #n2', function() {
       $.ajax({
-        url: './api/v1/sum',
+        url: '/api/v1/sum',
         method: 'POST',
         dataType: 'json',
         data: { n1: $('#n1').val(), n2: $('#n2').val() },

@@ -3,7 +3,8 @@
  * All rights reserved
  */
 
-#include "mongoose.h"
+#include "mongoose.h" 
+#include "stdio.h"
 
 static const char *s_http_port = "8000";
 static struct mg_serve_http_opts s_http_server_opts;
@@ -27,7 +28,6 @@ static void handle_sum_call(struct mg_connection *nc, struct http_message *hm) {
 
 static void ev_handler(struct mg_connection *nc, int ev, void *ev_data) {
   struct http_message *hm = (struct http_message *) ev_data;
-
   switch (ev) {
     case MG_EV_HTTP_REQUEST:
       if (mg_vcmp(&hm->uri, "/api/v1/sum") == 0) {
