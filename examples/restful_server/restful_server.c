@@ -8,35 +8,62 @@
 
 static const char *s_http_port = "8000";
 static struct mg_serve_http_opts s_http_server_opts;
+static int s_exit_flag = 0;
+static char * url = "https://gcm-http.googleapis.com/gcm/send";
+static char * headers = "Content-Type:application/json\r\nAuthorization:key=AIzaSyDvnf1lRGKzkfgcGbhUkFpiBW9FH4-DOvo\r";
+static char data[100];
 
-static void handle_sum_call(struct mg_connection *nc, struct http_message *hm) {
-  char n1[100], n2[100];
-  double result;
+static void ev_handler_push(struct mg_connection *nc, int ev, void *ev_data) {
+  struct http_message *hm = (struct http_message *) ev_data;
 
-  /* Get form variables */
-  mg_get_http_var(&hm->body, "n1", n1, sizeof(n1));
-  mg_get_http_var(&hm->body, "n2", n2, sizeof(n2));
+  switch (ev) {
+    case MG_EV_CONNECT:
+      if (* (int *) ev_data != 0) {
+        fprintf(stderr, "connect() failed: %s\n", strerror(* (int *) ev_data));
+        s_exit_flag = 1;
+      }
+      break;
+    case MG_EV_HTTP_REPLY:
+      nc->flags |= MG_F_CLOSE_IMMEDIATELY;
+      fwrite(hm->message.p, 1, hm->message.len, stdout);
+      fwrite(hm->body.p, 1, hm->body.len, stdout);
+      putchar('\n');
+      s_exit_flag = 1;
+      break;
+    default:
+      break;
+  }
+}
 
-  /* Send headers */
-  mg_printf(nc, "%s", "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n");
+void send_notification(char * item_name, char * token) {
+  struct mg_mgr mgr;
+  mg_mgr_init(&mgr, NULL);
 
-  /* Compute the result and send it back as a JSON object */
-  result = strtod(n1, NULL) + strtod(n2, NULL);
-  mg_printf_http_chunk(nc, "{ \"result\": %lf }", result);
-  mg_send_http_chunk(nc, "", 0);  /* Send empty chunk, the end of response */
+  char * data1 = "{\"data\": {\"name\":\"";
+  char * data2 = "\"},\n\"to\":\"";
+  char * data3 = "\"}";
+  strcpy(data, data1);
+  strcat(data, item_name);
+  strcat(data, data2);
+  strcat(data, token);
+  strcat(data, data3);
+  mg_connect_http(&mgr, ev_handler_push, url, headers, data);
+
+  while (s_exit_flag == 0) {
+    mg_mgr_poll(&mgr, 1000);
+  }
+  mg_mgr_free(&mgr);
 }
 
 static void ev_handler(struct mg_connection *nc, int ev, void *ev_data) {
   struct http_message *hm = (struct http_message *) ev_data;
+  char n1[100], n2[100];
+  mg_get_http_var(&hm->body, "n1", n1, sizeof(n1));
+  mg_get_http_var(&hm->body, "n2", n2, sizeof(n2));
   switch (ev) {
     case MG_EV_HTTP_REQUEST:
-      if (mg_vcmp(&hm->uri, "/api/v1/sum") == 0) {
-        handle_sum_call(nc, hm);                    /* Handle RESTful call */
-      } else if (mg_vcmp(&hm->uri, "/printcontent") == 0) {
-        char buf[100] = {0};
-        memcpy(buf, hm->body.p,
-               sizeof(buf) - 1 < hm->body.len? sizeof(buf) - 1 : hm->body.len);
-        printf("%s\n", buf);
+      if (mg_vcmp(&hm->uri, "/push/") == 0) {
+        send_notification(n1, n2);                    /* Handle RESTful call */
       } else {
         mg_serve_http(nc, hm, s_http_server_opts);  /* Serve static content */
       }
